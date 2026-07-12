@@ -48,6 +48,49 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             pointer-events: none;
         }
+
+        /* Стили для легенды карты */
+        .legend {
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #fff;
+            line-height: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .legend-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #00ffcc;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            display: inline-block;
+            border: 1px solid #000;
+        }
+        .legend-count {
+            color: #aaa;
+            font-size: 12px;
+            margin-left: auto;
+            padding-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -64,7 +107,7 @@
             attribution: '© OpenStreetMap © CARTO'
         }).addTo(map);
 
-        // --- Граница Москвы (Белая, тонкая нить) ---
+        // --- Граница Москвы (Белая, thin line) ---
         fetch('moscow_border.geojson')
             .then(res => res.json())
             .then(geoJsonData => {
@@ -92,17 +135,14 @@
             .then(geoJsonData => {
                 var pointsLayer = L.geoJSON(geoJsonData, {
                     pointToLayer: function (feature, latlng) {
-                        // Очищаем строку от невидимого мусора и переводим в верхний регистр
                         var rawType = feature.properties.type ? String(feature.properties.type) : '';
                         var cleanType = rawType.replace(/[\s\u200B-\u200D\uFEFF]/g, '').toUpperCase();
                         
-                        // По умолчанию ярко-красный для ПВЗ
                         var markerColor = "#ff0044"; 
                         var strokeColor = "#ff0044"; 
                         
-                        // Проверяем ОБА варианта написания: POSTAMAT (как в данных) и POSTOMAT
                         if (cleanType.indexOf('POSTAMAT') !== -1 || cleanType.indexOf('POSTOMAT') !== -1) {
-                            markerColor = "#ffee00"; // Ярко-желтый
+                            markerColor = "#ffee00"; 
                             strokeColor = "#ffee00"; 
                         }
 
@@ -164,6 +204,30 @@
 
         map.on('zoomend', updateLabelsVisibility);
 
+        // --- Добавление легенды на карту ---
+        var legend = L.control({ position: 'bottomleft' });
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = `
+                <div class="legend-title">Инфраструктура СДЭК</div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ff0044; border-color: #ff0044;"></span>
+                    <span>ПВЗ</span>
+                    <span class="legend-count">479</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ffee00; border-color: #ffee00;"></span>
+                    <span>Постомат</span>
+                    <span class="legend-count">68</span>
+                </div>
+            `;
+            return div;
+        };
+
+        legend.addTo(map);
+
+        // Обработка клика по кнопке скачивания
         document.getElementById('downloadSample').addEventListener('click', function() {
             window.location.href = 'cdek_sample_full.csv';
         });
